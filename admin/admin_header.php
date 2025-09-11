@@ -1,6 +1,7 @@
 <!-- admin_header.php -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Admin Dashboard</title>
@@ -11,6 +12,7 @@
       min-height: 100vh;
       overflow: hidden;
     }
+
     .sidebar {
       width: 250px;
       background-color: #1a237e;
@@ -20,19 +22,23 @@
       height: 100vh;
       position: fixed;
     }
+
     .sidebar h4 {
       color: #fff;
       margin-bottom: 30px;
     }
+
     .sidebar a {
       color: #cfd8dc;
       display: block;
       padding: 10px 0;
       text-decoration: none;
     }
+
     .sidebar a:hover {
       color: white;
     }
+
     .content {
       margin-left: 250px;
       padding: 30px;
@@ -42,6 +48,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="sidebar">
     <h4>Admin Panel</h4>
@@ -51,6 +58,7 @@
     <a href="manage_semesters.php">Manage Semesters</a>
     <a href="manage_users.php">Manage Users</a>
     <a href="manage_alumni.php">Manage Alumni</a>
+    <a href="manage_news_events.php">Manage News Events</a>
     <a href="../logout.php">Logout</a>
   </div>
   <div class="content">
