@@ -133,7 +133,7 @@ if (isset($_SESSION['role'])) {
       <a href="/university_ms/index.php">Home</a>
       <a href="about.php">About</a>
       <a href="#">Admissions</a>
-      <a href="#">Departments</a>
+      <a href="departments.php">Departments</a>
       <a href="news_events.php">News & Events</a>
       <a href="#">Library</a>
       <a href="contact-us.php">Contact</a>

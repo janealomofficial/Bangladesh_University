@@ -59,6 +59,7 @@
     <a href="manage_users.php">Manage Users</a>
     <a href="manage_alumni.php">Manage Alumni</a>
     <a href="manage_news_events.php">Manage News Events</a>
+    <a href="manage_departments.php">Manage Departments</a>
     <a href="../logout.php">Logout</a>
   </div>
   <div class="content">
