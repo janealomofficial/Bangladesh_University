@@ -6,11 +6,11 @@
   <meta charset="UTF-8">
   <title>Admin Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <style>
     body {
       display: flex;
       min-height: 100vh;
-      overflow: hidden;
     }
 
     .sidebar {
@@ -18,9 +18,12 @@
       background-color: #1a237e;
       color: white;
       flex-shrink: 0;
-      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       height: 100vh;
       position: fixed;
+      padding: 20px;
     }
 
     .sidebar h4 {
@@ -33,10 +36,37 @@
       display: block;
       padding: 10px 0;
       text-decoration: none;
+      transition: 0.2s;
     }
 
     .sidebar a:hover {
-      color: white;
+      color: #fff;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      padding-left: 12px;
+    }
+
+    .profile-section {
+      border-top: 1px solid rgba(255, 255, 255, 0.3);
+      margin-top: 20px;
+      padding-top: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .profile-info img {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid white;
     }
 
     .content {
@@ -51,15 +81,32 @@
 
 <body>
   <div class="sidebar">
-    <h4>Admin Panel</h4>
-    <a href="dashboard.php">Dashboard</a>
-    <a href="manage_students.php">Manage Students</a>
-    <a href="manage_courses.php">Manage Courses</a>
-    <a href="manage_semesters.php">Manage Semesters</a>
-    <a href="manage_users.php">Manage Users</a>
-    <a href="manage_alumni.php">Manage Alumni</a>
-    <a href="manage_news_events.php">Manage News Events</a>
-    <a href="manage_departments.php">Manage Departments</a>
-    <a href="../logout.php">Logout</a>
+    <div>
+      <h4>Admin Panel</h4>
+      <a href="dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
+      <a href="manage_students.php"><i class="bi bi-people"></i> Manage Students</a>
+      <a href="manage_courses.php"><i class="bi bi-book"></i> Manage Courses</a>
+      <a href="manage_semesters.php"><i class="bi bi-calendar-event"></i> Manage Semesters</a>
+      <a href="manage_users.php"><i class="bi bi-person-gear"></i> Manage Users</a>
+      <a href="manage_alumni.php"><i class="bi bi-mortarboard"></i> Manage Alumni</a>
+      <a href="manage_news_events.php"><i class="bi bi-newspaper"></i> Manage News & Events</a>
+      <a href="manage_departments.php"><i class="bi bi-building"></i> Manage Departments</a>
+      <a href="manage_convocation.php"><i class="bi bi-award"></i> Manage Convocation</a>
+    </div>
+
+    <!-- Bottom Profile & Logout -->
+    <div class="profile-section">
+      <div class="profile-info">
+        <img src="../uploads/admin-avatar.png" alt="Admin">
+        <div>
+          <strong><?= $_SESSION['admin_name'] ?? "Admin"; ?></strong><br>
+          <small style="color:#cfd8dc;">Administrator</small>
+        </div>
+      </div>
+      <a href="../logout.php" class="btn btn-sm btn-black" title="Logout">
+        <i class="bi bi-box-arrow-right"></i>
+      </a>
+    </div>
   </div>
+
   <div class="content">

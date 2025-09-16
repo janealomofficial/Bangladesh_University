@@ -11,7 +11,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Second Card -->
             <div class="col-md-4 mb-4">
                 <div class="card shadow-sm border-0">
@@ -23,7 +23,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Third Card -->
             <div class="col-md-4 mb-4">
                 <div class="card shadow-sm border-0">
@@ -40,23 +40,33 @@
 
 <!-- Add the custom styles here or in an external CSS file -->
 <style>
+    body {
+        background-color: #faeaeeff;
+
+    }
+
     .card-img-top {
         height: 250px;
         object-fit: cover;
     }
+
     .card-title {
         font-size: 1.5rem;
         font-weight: bold;
     }
+
     .btn-danger {
-        background-color: #9e1b32; /* Red */
+        background-color: #9e1b32;
+        /* Red */
         color: white;
         font-size: 1rem;
         padding: 12px 30px;
         border-radius: 5px;
         text-decoration: none;
     }
+
     .btn-danger:hover {
-        background-color: #850e29; /* Darker red on hover */
+        background-color: #850e29;
+        /* Darker red on hover */
     }
 </style>

@@ -75,11 +75,13 @@ if (isset($_SESSION['role'])) {
     .navbar .logo img {
       height: 50px;
       margin-right: 10px;
+      margin-left: 10px;
     }
 
     .navbar .menu {
       display: flex;
       gap: 20px;
+      margin-right: 10px;
     }
 
     .navbar .menu a {
@@ -118,7 +120,7 @@ if (isset($_SESSION['role'])) {
     <div class="top-bar-nav">
       <nav>
         <a href="alumni.php">Allumni</a>
-        <a href="#">3rd Convocation</a>
+        <a href="convocation.php">3rd Convocation</a>
         <a href="#">Result</a>
       </nav>
     </div>

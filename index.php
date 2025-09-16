@@ -11,16 +11,30 @@ require_once __DIR__ . "/includes/footer.php";
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>University Management System</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 30px; }
-        a { text-decoration: none; color: #007BFF; }
-        a:hover { text-decoration: underline; }
+        body {
+            font-family: Arial, sans-serif;
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+
+        a {
+            text-decoration: none;
+            color: #007BFF;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
+
 <body>
 
 </body>
+
 </html>
