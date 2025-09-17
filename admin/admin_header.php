@@ -11,25 +11,45 @@
     body {
       display: flex;
       min-height: 100vh;
+      margin: 0;
     }
 
     .sidebar {
       width: 250px;
       background-color: #1a237e;
       color: white;
-      flex-shrink: 0;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      height: 100vh;
       position: fixed;
-      padding: 20px;
+      top: 0;
+      bottom: 0;
+      padding: 20px 0;
     }
 
     .sidebar h4 {
       color: #fff;
-      margin-bottom: 30px;
+      margin: 0 20px 20px;
     }
+
+    /* Scrollable menu section */
+    /* Scrollable menu section */
+    .menu-container {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 0 20px;
+
+      /* Hide scrollbar but keep scrolling functional */
+      scrollbar-width: none;
+      /* Firefox */
+      -ms-overflow-style: none;
+      /* IE 10+ */
+    }
+
+    .menu-container::-webkit-scrollbar {
+      display: none;
+      /* Chrome, Safari */
+    }
+
 
     .sidebar a {
       color: #cfd8dc;
@@ -48,8 +68,7 @@
 
     .profile-section {
       border-top: 1px solid rgba(255, 255, 255, 0.3);
-      margin-top: 20px;
-      padding-top: 15px;
+      padding: 15px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -81,20 +100,22 @@
 
 <body>
   <div class="sidebar">
-    <div>
-      <h4>Admin Panel</h4>
+    <h4>Admin Panel</h4>
+    <div class="menu-container">
       <a href="dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
+      <a href="manage_admissions.php"><i class="bi bi-box-fill"></i> Manage Admissions</a>
       <a href="manage_students.php"><i class="bi bi-people"></i> Manage Students</a>
+      <a href="manage_faculty.php"><i class="bi bi-person-badge"></i> Manage Faculty</a>
+      <a href="manage_users.php"><i class="bi bi-person-gear"></i> Manage Users</a>
       <a href="manage_courses.php"><i class="bi bi-book"></i> Manage Courses</a>
       <a href="manage_semesters.php"><i class="bi bi-calendar-event"></i> Manage Semesters</a>
-      <a href="manage_users.php"><i class="bi bi-person-gear"></i> Manage Users</a>
       <a href="manage_alumni.php"><i class="bi bi-mortarboard"></i> Manage Alumni</a>
       <a href="manage_news_events.php"><i class="bi bi-newspaper"></i> Manage News & Events</a>
       <a href="manage_departments.php"><i class="bi bi-building"></i> Manage Departments</a>
       <a href="manage_convocation.php"><i class="bi bi-award"></i> Manage Convocation</a>
     </div>
 
-    <!-- Bottom Profile & Logout -->
+    <!-- Profile always pinned at bottom -->
     <div class="profile-section">
       <div class="profile-info">
         <img src="../uploads/admin-avatar.png" alt="Admin">
@@ -103,7 +124,7 @@
           <small style="color:#cfd8dc;">Administrator</small>
         </div>
       </div>
-      <a href="../logout.php" class="btn btn-sm btn-black" title="Logout">
+      <a href="../logout.php" class="btn btn-sm btn-dark" title="Logout">
         <i class="bi bi-box-arrow-right"></i>
       </a>
     </div>

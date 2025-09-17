@@ -98,7 +98,7 @@ if (isset($_SESSION['role'])) {
     .navbar .menu .highlight {
       background: #0d2240;
       color: #fff;
-      padding: 6px 12px;
+      padding: 8px 12px;
       border-radius: 4px;
     }
 

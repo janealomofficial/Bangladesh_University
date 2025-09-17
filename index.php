@@ -18,8 +18,7 @@ require_once __DIR__ . "/includes/footer.php";
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin-left: 10px;
-            margin-right: 10px;
+
         }
 
         a {
