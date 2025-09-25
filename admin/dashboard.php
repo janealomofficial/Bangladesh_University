@@ -175,6 +175,16 @@ include 'admin_header.php';
       </div>
     </div>
 
+    <div class="col-md-4">
+      <div class="card text-bg-info mb-3">
+        <div class="card-body">
+          <h5 class="card-title">Routine Management</h5>
+          <a href="assign_routine.php" class="btn btn-light">Manage Routine</a>
+        </div>
+      </div>
+    </div>
+
+
   </div>
 </div>
 

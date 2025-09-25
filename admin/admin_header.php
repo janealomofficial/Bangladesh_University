@@ -113,6 +113,9 @@
       <a href="manage_news_events.php"><i class="bi bi-newspaper"></i> Manage News & Events</a>
       <a href="manage_departments.php"><i class="bi bi-building"></i> Manage Departments</a>
       <a href="manage_convocation.php"><i class="bi bi-award"></i> Manage Convocation</a>
+      <a href="assign_routine.php" class="nav-link text-white"><i class="bi bi-calendar-plus"></i> Assign Routine</a>
+      <a href="view_schedule.php" class="nav-link text-white"><i class="bi bi-calendar-event"></i> View Routine</a>
+      <a href="manage_enrollments.php" class="nav-link text-white"><i class="bi bi-person-check"></i> Manage Enrollments</a>
     </div>
 
     <!-- Profile always pinned at bottom -->
