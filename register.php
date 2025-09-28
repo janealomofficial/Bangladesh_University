@@ -2,10 +2,8 @@
 session_start();
 require_once __DIR__ . "/app/config/db.php";
 
-
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = trim($_POST['username']);
+    $username = trim($_POST['username']); // full name
     $email = trim($_POST['email']);
     $password = $_POST['password'];
 
@@ -19,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt = $DB_con->prepare("SELECT user_id FROM users WHERE username = :username OR email = :email LIMIT 1");
             $stmt->execute([
                 ':username' => $username,
-                ':email' => $email
+                ':email'    => $email
             ]);
 
             if ($stmt->rowCount() > 0) {
@@ -27,24 +25,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } else {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
+                // Insert into users table
                 $stmt = $DB_con->prepare("
                     INSERT INTO users (username, email, password, role, status, created_at) 
                     VALUES (:username, :email, :password, 'student', 'active', NOW())
                 ");
-
                 $stmt->execute([
                     ':username' => $username,
-                    ':email' => $email,
+                    ':email'    => $email,
                     ':password' => $hashed_password
                 ]);
 
-                // ✅ Redirect after success (no raw PHP messages)
+                // ✅ Get last inserted user_id
+                $user_id = $DB_con->lastInsertId();
+
+                // ✅ Auto-link student profile
+                $stmt2 = $DB_con->prepare("
+                    INSERT INTO students (user_id, full_name, department) 
+                    VALUES (:uid, :full_name, :dept)
+                ");
+                $stmt2->execute([
+                    ':uid'       => $user_id,
+                    ':full_name' => $username,    // store as student full name
+                    ':dept'      => 'Not Assigned'
+                ]);
+
+                // ✅ Redirect after success
                 header("Location: login.php?registered=1");
                 exit;
             }
         } catch (PDOException $e) {
-            // Catch duplicate entry errors or DB issues
-            if ($e->getCode() == 23000) { 
+            if ($e->getCode() == 23000) {
                 $error = "Username or Email already exists!";
             } else {
                 $error = "Something went wrong. Please try again.";
@@ -55,6 +66,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -69,6 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             height: 100vh;
             margin: 0;
         }
+
         .container {
             background-color: #ffffff;
             padding: 40px;
@@ -77,20 +90,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             width: 400px;
             text-align: center;
         }
+
         h2 {
             color: #1a237e;
             margin-bottom: 30px;
         }
+
         .form-group {
             margin-bottom: 20px;
             text-align: left;
         }
+
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
             color: #333;
         }
+
         input {
             width: 100%;
             padding: 12px;
@@ -99,6 +116,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             font-size: 16px;
             box-sizing: border-box;
         }
+
         .btn {
             background-color: #1a237e;
             color: white;
@@ -110,14 +128,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             font-size: 18px;
             font-weight: bold;
         }
+
         .btn:hover {
             background-color: #0d125a;
         }
+
         .message {
             margin-top: 20px;
             padding: 10px;
             border-radius: 5px;
         }
+
         .error {
             background-color: #f8d7da;
             color: #721c24;
@@ -125,32 +146,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     </style>
 </head>
+
 <body>
-<div class="container">
-    <h2>Student Registration</h2>
+    <div class="container">
+        <h2>Student Registration</h2>
 
-    <?php if (isset($error)): ?>
-        <div class="message error"><?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
+        <?php if (isset($error)): ?>
+            <div class="message error"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
 
-    <form action="" method="post">
-        <div class="form-group">
-            <label for="username">Full Name</label>
-            <input type="text" id="username" name="username" required>
-        </div>
+        <form action="" method="post">
+            <div class="form-group">
+                <label for="username">Full Name</label>
+                <input type="text" id="username" name="username" required>
+            </div>
 
-        <div class="form-group">
-            <label for="email">Student Email</label>
-            <input type="email" id="email" name="email" required>
-        </div>
+            <div class="form-group">
+                <label for="email">Student Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
 
-        <div class="form-group">
-            <label for="password">Create Password</label>
-            <input type="password" id="password" name="password" required>
-        </div>
+            <div class="form-group">
+                <label for="password">Create Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
 
-        <button type="submit" class="btn">Register as Student</button>
-    </form>
-</div>
+            <button type="submit" class="btn">Register as Student</button>
+        </form>
+    </div>
 </body>
+
 </html>

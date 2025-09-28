@@ -1,327 +1,151 @@
 <?php
 session_start();
 require_once __DIR__ . "/../app/config/db.php";
+
+// Auth check
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../login.php");
     exit;
 }
 
-// Add
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_offering'])) {
-    $stmt = $DB_con->prepare("INSERT INTO course_offerings (course_id,faculty_id,semester_id,section,year) VALUES (:c,:f,:s,:sec,:y)");
-    $stmt->execute([':c' => $_POST['course_id'], ':f' => $_POST['faculty_id'], ':s' => $_POST['semester_id'], ':sec' => $_POST['section'], ':y' => $_POST['year']]);
-    $success = "Offering added!";
+// Handle Add Offering
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'], $_POST['faculty_id'], $_POST['semester_id'], $_POST['section'], $_POST['year'])) {
+    $course_id   = $_POST['course_id'];
+    $faculty_id  = $_POST['faculty_id'];
+    $semester_id = $_POST['semester_id'];
+    $section     = $_POST['section'];
+    $year        = $_POST['year'];
+
+    try {
+        $stmt = $DB_con->prepare("INSERT INTO course_offerings (course_id, faculty_id, semester_id, section, year) 
+                                  VALUES (:c, :f, :s, :sec, :y)");
+        $stmt->execute([
+            ':c' => $course_id,
+            ':f' => $faculty_id,
+            ':s' => $semester_id,
+            ':sec' => $section,
+            ':y' => $year
+        ]);
+        $success = "Course offering added successfully!";
+    } catch (PDOException $e) {
+        $error = "Error: " . $e->getMessage();
+    }
 }
 
-// Edit
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_offering'])) {
-    $stmt = $DB_con->prepare("UPDATE course_offerings SET course_id=:c,faculty_id=:f,semester_id=:s,section=:sec,year=:y WHERE id=:id");
-    $stmt->execute([':c' => $_POST['course_id'], ':f' => $_POST['faculty_id'], ':s' => $_POST['semester_id'], ':sec' => $_POST['section'], ':y' => $_POST['year'], ':id' => $_POST['id']]);
-    $success = "Offering updated!";
-}
-
-// Delete
+// Handle Delete
 if (isset($_GET['delete'])) {
-    $stmt = $DB_con->prepare("DELETE FROM course_offerings WHERE id=:id");
-    $stmt->execute([':id' => $_GET['delete']]);
-    $success = "Offering deleted!";
+    $id = $_GET['delete'];
+    $DB_con->prepare("DELETE FROM course_offerings WHERE id=:id")->execute([':id' => $id]);
+    $success = "Offering removed!";
 }
 
-// Dropdown data
-$courses = $DB_con->query("SELECT course_id,course_name FROM courses")->fetchAll(PDO::FETCH_ASSOC);
-$faculty = $DB_con->query("SELECT faculty_id,full_name FROM faculty")->fetchAll(PDO::FETCH_ASSOC);
-$semesters = $DB_con->query("SELECT semester_id,name FROM semesters")->fetchAll(PDO::FETCH_ASSOC);
+// Fetch dropdown data
+$courses   = $DB_con->query("SELECT course_id, course_name, course_code FROM courses ORDER BY course_name")->fetchAll(PDO::FETCH_ASSOC);
+$faculty   = $DB_con->query("SELECT faculty_id, full_name FROM faculty ORDER BY full_name")->fetchAll(PDO::FETCH_ASSOC);
+$semesters = $DB_con->query("SELECT semester_id, name FROM semesters ORDER BY start_date DESC")->fetchAll(PDO::FETCH_ASSOC);
 
-// Fetch offerings
-$offerings = $DB_con->query("SELECT o.*,c.course_name,f.full_name,s.name AS semester_name
-                           FROM course_offerings o
-                           JOIN courses c ON o.course_id=c.course_id
-                           JOIN faculty f ON o.faculty_id=f.faculty_id
-                           JOIN semesters s ON o.semester_id=s.semester_id
-                           ORDER BY o.year DESC")->fetchAll(PDO::FETCH_ASSOC);
+// Fetch offerings list
+$offerings = $DB_con->query("
+    SELECT o.id, c.course_name, c.course_code, f.full_name AS faculty, s.name AS semester, o.section, o.year
+    FROM course_offerings o
+    JOIN courses c   ON o.course_id   = c.course_id
+    JOIN faculty f   ON o.faculty_id  = f.faculty_id
+    JOIN semesters s ON o.semester_id = s.semester_id
+    ORDER BY o.year DESC, s.start_date DESC
+")->fetchAll(PDO::FETCH_ASSOC);
 
 include 'admin_header.php';
 ?>
 
-<div class="container mt-4">
-    <h2>Manage Course Offerings</h2>
-    <?php if (!empty($success)): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
+<div class="container-fluid mt-4">
+    <h2>📘 Manage Course Offerings</h2>
 
-    <!-- Add Form -->
-    <form method="POST" class="row g-3 mb-4">
-        <input type="hidden" name="add_offering" value="1">
-        <div class="col-md-3">
-            <select name="course_id" class="form-control" required>
-                <option value="">Course</option>
-                <?php foreach ($courses as $c): ?><option value="<?= $c['course_id'] ?>"><?= $c['course_name'] ?></option><?php endforeach; ?>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <select name="faculty_id" class="form-control" required>
-                <option value="">Faculty</option>
-                <?php foreach ($faculty as $f): ?><option value="<?= $f['faculty_id'] ?>"><?= $f['full_name'] ?></option><?php endforeach; ?>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select name="semester_id" class="form-control" required>
-                <option value="">Semester</option>
-                <?php foreach ($semesters as $s): ?><option value="<?= $s['semester_id'] ?>"><?= $s['name'] ?></option><?php endforeach; ?>
-            </select>
-        </div>
-        <div class="col-md-1"><input type="text" name="section" placeholder="Sec" class="form-control" required></div>
-        <div class="col-md-2"><input type="number" name="year" value="<?= date('Y') ?>" class="form-control" required></div>
-        <div class="col-md-1"><button class="btn btn-primary w-100">Add</button></div>
-    </form>
+    <?php if (isset($success)): ?>
+        <div class="alert alert-success"><?= $success ?></div>
+    <?php endif; ?>
+    <?php if (isset($error)): ?>
+        <div class="alert alert-danger"><?= $error ?></div>
+    <?php endif; ?>
 
-    <!-- Table -->
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Course</th>
-                <th>Faculty</th>
-                <th>Semester</th>
-                <th>Section</th>
-                <th>Year</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($offerings as $o): ?>
-                <tr>
-                    <td><?= $o['id'] ?></td>
-                    <td><?= $o['course_name'] ?></td>
-                    <td><?= $o['full_name'] ?></td>
-                    <td><?= $o['semester_name'] ?></td>
-                    <td><?= $o['section'] ?></td>
-                    <td><?= $o['year'] ?></td>
-                    <td>
-                        <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editOffer<?= $o['id'] ?>">Edit</button>
-                        <a href="?delete=<?= $o['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete offering?');">Delete</a>
-                    </td>
-                </tr>
-
-                <!-- Edit Modal -->
-                <div class="modal fade" id="editOffer<?= $o['id'] ?>">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <form method="POST">
-                                <div class="modal-header">
-                                    <h5>Edit Offering</h5>
-                                </div>
-                                <div class="modal-body">
-                                    <input type="hidden" name="id" value="<?= $o['id'] ?>">
-                                    <input type="hidden" name="edit_offering" value="1">
-
-                                    <div class="mb-2"><label>Course</label>
-                                        <select name="course_id" class="form-control"><?php foreach ($courses as $c): ?>
-                                                <option value="<?= $c['course_id'] ?>" <?= $o['course_id'] == $c['course_id'] ? 'selected' : '' ?>><?= $c['course_name'] ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-
-                                    <div class="mb-2"><label>Faculty</label>
-                                        <select name="faculty_id" class="form-control"><?php foreach ($faculty as $f): ?>
-                                                <option value="<?= $f['faculty_id'] ?>" <?= $o['faculty_id'] == $f['faculty_id'] ? 'selected' : '' ?>><?= $f['full_name'] ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-
-                                    <div class="mb-2"><label>Semester</label>
-                                        <select name="semester_id" class="form-control"><?php foreach ($semesters as $s): ?>
-                                                <option value="<?= $s['semester_id'] ?>" <?= $o['semester_id'] == $s['semester_id'] ? 'selected' : '' ?>><?= $s['name'] ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-
-                                    <div class="mb-2"><label>Section</label><input class="form-control" name="section" value="<?= $o['section'] ?>"></div>
-                                    <div class="mb-2"><label>Year</label><input class="form-control" type="number" name="year" value="<?= $o['year'] ?>"></div>
-                                </div>
-                                <div class="modal-footer"><button class="btn btn-success">Save</button></div>
-                            </form>
-                        </div>
+    <!-- Add Offering Form -->
+    <div class="card mb-4">
+        <div class="card-header">Add Course Offering</div>
+        <div class="card-body">
+            <form method="post">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Course</label>
+                        <select name="course_id" class="form-control" required>
+                            <option value="">-- Select Course --</option>
+                            <?php foreach ($courses as $c): ?>
+                                <option value="<?= $c['course_id'] ?>"><?= $c['course_name'] ?> (<?= $c['course_code'] ?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Faculty</label>
+                        <select name="faculty_id" class="form-control" required>
+                            <option value="">-- Select Faculty --</option>
+                            <?php foreach ($faculty as $f): ?>
+                                <option value="<?= $f['faculty_id'] ?>"><?= $f['full_name'] ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">Semester</label>
+                        <select name="semester_id" class="form-control" required>
+                            <option value="">-- Select Semester --</option>
+                            <?php foreach ($semesters as $s): ?>
+                                <option value="<?= $s['semester_id'] ?>"><?= $s['name'] ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">Section</label>
+                        <input type="text" name="section" class="form-control" placeholder="A / B / C" required>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">Year</label>
+                        <input type="number" name="year" class="form-control" value="<?= date('Y') ?>" required>
                     </div>
                 </div>
-            <?php endforeach; ?>
-        </tbody>
-        Here’s the **final complete page** for `manage_offerings.php` with full **Add, Edit, Delete** features using Bootstrap modals, matching the other two pages.
-
-        ---
-
-        # 📌 `manage_offerings.php`
-
-        ```php
-        <?php
-        session_start();
-        require_once __DIR__ . "/../app/config/db.php";
-        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-            header("Location: ../login.php");
-            exit;
-        }
-
-        // ✅ Add Offering
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_offering'])) {
-            $stmt = $DB_con->prepare("INSERT INTO course_offerings (course_id,faculty_id,semester_id,section,year) VALUES (:c,:f,:s,:sec,:y)");
-            $stmt->execute([
-                ':c' => $_POST['course_id'],
-                ':f' => $_POST['faculty_id'],
-                ':s' => $_POST['semester_id'],
-                ':sec' => $_POST['section'],
-                ':y' => $_POST['year']
-            ]);
-            $success = "Offering added!";
-        }
-
-        // ✅ Edit Offering
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_offering'])) {
-            $stmt = $DB_con->prepare("UPDATE course_offerings 
-                            SET course_id=:c, faculty_id=:f, semester_id=:s, section=:sec, year=:y 
-                            WHERE id=:id");
-            $stmt->execute([
-                ':c' => $_POST['course_id'],
-                ':f' => $_POST['faculty_id'],
-                ':s' => $_POST['semester_id'],
-                ':sec' => $_POST['section'],
-                ':y' => $_POST['year'],
-                ':id' => $_POST['id']
-            ]);
-            $success = "Offering updated!";
-        }
-
-        // ✅ Delete Offering
-        if (isset($_GET['delete'])) {
-            $stmt = $DB_con->prepare("DELETE FROM course_offerings WHERE id=:id");
-            $stmt->execute([':id' => $_GET['delete']]);
-            $success = "Offering deleted!";
-        }
-
-        // Dropdown Data
-        $courses = $DB_con->query("SELECT course_id,course_name FROM courses")->fetchAll(PDO::FETCH_ASSOC);
-        $faculty = $DB_con->query("SELECT faculty_id,full_name FROM faculty")->fetchAll(PDO::FETCH_ASSOC);
-        $semesters = $DB_con->query("SELECT semester_id,name FROM semesters")->fetchAll(PDO::FETCH_ASSOC);
-
-        // Fetch Offerings
-        $offerings = $DB_con->query("SELECT o.*,c.course_name,f.full_name,s.name AS semester_name
-                           FROM course_offerings o
-                           JOIN courses c ON o.course_id=c.course_id
-                           JOIN faculty f ON o.faculty_id=f.faculty_id
-                           JOIN semesters s ON o.semester_id=s.semester_id
-                           ORDER BY o.year DESC")->fetchAll(PDO::FETCH_ASSOC);
-
-        include 'admin_header.php';
-        ?>
-
-        <div class="container mt-4">
-            <h2>Manage Course Offerings</h2>
-            <?php if (!empty($success)): ?><div class="alert alert-success"><?= $success ?></div><?php endif; ?>
-
-            <!-- Add Form -->
-            <form method="POST" class="row g-3 mb-4">
-                <input type="hidden" name="add_offering" value="1">
-                <div class="col-md-3">
-                    <select name="course_id" class="form-control" required>
-                        <option value="">Course</option>
-                        <?php foreach ($courses as $c): ?>
-                            <option value="<?= $c['course_id'] ?>"><?= $c['course_name'] ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <select name="faculty_id" class="form-control" required>
-                        <option value="">Faculty</option>
-                        <?php foreach ($faculty as $f): ?>
-                            <option value="<?= $f['faculty_id'] ?>"><?= $f['full_name'] ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select name="semester_id" class="form-control" required>
-                        <option value="">Semester</option>
-                        <?php foreach ($semesters as $s): ?>
-                            <option value="<?= $s['semester_id'] ?>"><?= $s['name'] ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-1"><input type="text" name="section" placeholder="Sec" class="form-control" required></div>
-                <div class="col-md-2"><input type="number" name="year" value="<?= date('Y') ?>" class="form-control" required></div>
-                <div class="col-md-1"><button class="btn btn-primary w-100">Add</button></div>
+                <button type="submit" class="btn btn-primary">Add Offering</button>
             </form>
+        </div>
+    </div>
 
-            <!-- Offerings Table -->
-            <table class="table table-bordered align-middle">
+    <!-- Offerings List -->
+    <div class="card">
+        <div class="card-header">All Course Offerings</div>
+        <div class="card-body">
+            <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Course</th>
                         <th>Faculty</th>
                         <th>Semester</th>
                         <th>Section</th>
                         <th>Year</th>
-                        <th>Actions</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($offerings as $o): ?>
                         <tr>
-                            <td><?= $o['id'] ?></td>
-                            <td><?= $o['course_name'] ?></td>
-                            <td><?= $o['full_name'] ?></td>
-                            <td><?= $o['semester_name'] ?></td>
-                            <td><?= $o['section'] ?></td>
-                            <td><?= $o['year'] ?></td>
+                            <td><?= htmlspecialchars($o['course_name']); ?> (<?= $o['course_code']; ?>)</td>
+                            <td><?= htmlspecialchars($o['faculty']); ?></td>
+                            <td><?= htmlspecialchars($o['semester']); ?></td>
+                            <td><?= htmlspecialchars($o['section']); ?></td>
+                            <td><?= htmlspecialchars($o['year']); ?></td>
                             <td>
-                                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editOffer<?= $o['id'] ?>">Edit</button>
-                                <a href="?delete=<?= $o['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete offering?');">Delete</a>
+                                <a href="?delete=<?= $o['id']; ?>" onclick="return confirm('Remove this offering?')" class="btn btn-sm btn-danger">Delete</a>
                             </td>
                         </tr>
-
-                        <!-- Edit Modal -->
-                        <div class="modal fade" id="editOffer<?= $o['id'] ?>">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <form method="POST">
-                                        <div class="modal-header">
-                                            <h5>Edit Offering</h5>
-                                        </div>
-                                        <div class="modal-body">
-                                            <input type="hidden" name="id" value="<?= $o['id'] ?>">
-                                            <input type="hidden" name="edit_offering" value="1">
-
-                                            <div class="mb-2"><label>Course</label>
-                                                <select name="course_id" class="form-control">
-                                                    <?php foreach ($courses as $c): ?>
-                                                        <option value="<?= $c['course_id'] ?>" <?= $o['course_id'] == $c['course_id'] ? 'selected' : '' ?>><?= $c['course_name'] ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </div>
-
-                                            <div class="mb-2"><label>Faculty</label>
-                                                <select name="faculty_id" class="form-control">
-                                                    <?php foreach ($faculty as $f): ?>
-                                                        <option value="<?= $f['faculty_id'] ?>" <?= $o['faculty_id'] == $f['faculty_id'] ? 'selected' : '' ?>><?= $f['full_name'] ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </div>
-
-                                            <div class="mb-2"><label>Semester</label>
-                                                <select name="semester_id" class="form-control">
-                                                    <?php foreach ($semesters as $s): ?>
-                                                        <option value="<?= $s['semester_id'] ?>" <?= $o['semester_id'] == $s['semester_id'] ? 'selected' : '' ?>><?= $s['name'] ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </div>
-
-                                            <div class="mb-2"><label>Section</label><input class="form-control" name="section" value="<?= $o['section'] ?>"></div>
-                                            <div class="mb-2"><label>Year</label><input class="form-control" type="number" name="year" value="<?= $o['year'] ?>"></div>
-                                        </div>
-                                        <div class="modal-footer"><button class="btn btn-success">Save</button></div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
+    </div>
+</div>
 
-        <?php include 'admin_footer.php'; ?>
+<?php include 'admin_footer.php'; ?>

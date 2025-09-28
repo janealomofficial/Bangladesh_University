@@ -18,12 +18,12 @@ if (isset($_GET['id'])) {
     }
 }
 
-// Fetch semesters for dropdown
-$sem_stmt = $DB_con->query("SELECT semester_id, semester_name FROM semesters");
+// ✅ Fetch semesters for dropdown (fixed: use 'name')
+$sem_stmt = $DB_con->query("SELECT semester_id, name FROM semesters ORDER BY created_at DESC");
 $semesters = $sem_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch courses for dropdown (with existing assignments)
-$course_stmt = $DB_con->query("SELECT course_id, course_name FROM courses");
+$course_stmt = $DB_con->query("SELECT course_id, course_name, course_code FROM courses");
 $courses = $course_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch assigned courses to the student
@@ -103,20 +103,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_student'])) {
                         <?php foreach ($semesters as $semester): ?>
                             <option value="<?= $semester['semester_id']; ?>"
                                 <?= $semester['semester_id'] == $student['semester_id'] ? 'selected' : ''; ?>>
-                                <?= $semester['semester_name']; ?>
+                                <?= htmlspecialchars($semester['name']); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
 
-                <!-- Courses Checkbox -->
+                <!-- Courses Multi Select -->
                 <div class="mb-3">
                     <label class="form-label">Assign Courses</label>
                     <select name="courses[]" class="form-select" multiple>
                         <?php foreach ($courses as $course): ?>
                             <option value="<?= $course['course_id']; ?>"
                                 <?= in_array($course['course_id'], $assigned_courses) ? 'selected' : ''; ?>>
-                                <?= $course['course_name']; ?> (<?= $course['course_id']; ?>)
+                                <?= htmlspecialchars($course['course_name']); ?> (<?= $course['course_code']; ?>)
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -133,7 +133,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_student'])) {
 </div>
 
 <?php include 'admin_footer.php'; ?>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>

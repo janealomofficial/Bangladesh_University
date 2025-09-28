@@ -106,7 +106,7 @@
       <a href="manage_admissions.php"><i class="bi bi-box-fill"></i> Manage Admissions</a>
       <a href="manage_students.php"><i class="bi bi-people"></i> Manage Students</a>
       <a href="manage_faculty.php"><i class="bi bi-person-badge"></i> Manage Faculty</a>
-      <a href="manage_users.php"><i class="bi bi-person-gear"></i> Manage Users</a>
+      <!-- <a href="manage_users.php"><i class="bi bi-person-gear"></i> Manage Users</a> -->
       <a href="manage_courses.php"><i class="bi bi-book"></i> Manage Courses</a>
       <a href="manage_semesters.php"><i class="bi bi-calendar-event"></i> Manage Semesters</a>
       <a href="manage_alumni.php"><i class="bi bi-mortarboard"></i> Manage Alumni</a>
@@ -116,6 +116,9 @@
       <a href="assign_routine.php" class="nav-link text-white"><i class="bi bi-calendar-plus"></i> Assign Routine</a>
       <a href="view_schedule.php" class="nav-link text-white"><i class="bi bi-calendar-event"></i> View Routine</a>
       <a href="manage_enrollments.php" class="nav-link text-white"><i class="bi bi-person-check"></i> Manage Enrollments</a>
+      <a class="nav-link" href="manage_offerings.php">
+        <i class="bi bi-link"></i> Manage Offerings
+      </a>
     </div>
 
     <!-- Profile always pinned at bottom -->
@@ -134,3 +137,5 @@
   </div>
 
   <div class="content">
+    <!-- Bootstrap CSS already included -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

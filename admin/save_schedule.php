@@ -1,28 +1,34 @@
 <?php
 session_start();
 require_once __DIR__ . "/../app/config/db.php";
-header("Content-Type: application/json");
+
+header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $room_id     = $_POST['room_id'];
-    $timeslot_id = $_POST['timeslot_id'];
     $offering_id = $_POST['offering_id'];
+    $room_id = $_POST['room_id'];
+    $timeslot_id = $_POST['timeslot_id'];
 
     try {
-        // Conflict check
-        $check = $DB_con->prepare("SELECT * FROM schedule 
-            WHERE (room_id=:r AND timeslot_id=:t) 
-               OR (offering_id=:o AND timeslot_id=:t)");
-        $check->execute([':r' => $room_id, ':t' => $timeslot_id, ':o' => $offering_id]);
-
-        if ($check->rowCount() > 0) {
-            echo json_encode(['success' => false, 'message' => 'Conflict: Room or faculty already booked in this slot.']);
+        // Conflict: room + timeslot already used
+        $stmt = $DB_con->prepare("SELECT COUNT(*) FROM schedule WHERE room_id=? AND timeslot_id=?");
+        $stmt->execute([$room_id, $timeslot_id]);
+        if ($stmt->fetchColumn() > 0) {
+            echo json_encode(['success' => false, 'message' => 'This room is already booked for that timeslot.']);
             exit;
         }
 
-        $stmt = $DB_con->prepare("INSERT INTO schedule (offering_id, room_id, timeslot_id) 
-                                  VALUES (:o,:r,:t)");
-        $stmt->execute([':o' => $offering_id, ':r' => $room_id, ':t' => $timeslot_id]);
+        // Conflict: same offering in same timeslot
+        $stmt = $DB_con->prepare("SELECT COUNT(*) FROM schedule WHERE offering_id=? AND timeslot_id=?");
+        $stmt->execute([$offering_id, $timeslot_id]);
+        if ($stmt->fetchColumn() > 0) {
+            echo json_encode(['success' => false, 'message' => 'This course is already scheduled in this timeslot.']);
+            exit;
+        }
+
+        // Insert new schedule
+        $stmt = $DB_con->prepare("INSERT INTO schedule (offering_id, room_id, timeslot_id, created_at) VALUES (?,?,?,NOW())");
+        $stmt->execute([$offering_id, $room_id, $timeslot_id]);
 
         echo json_encode(['success' => true]);
     } catch (PDOException $e) {
