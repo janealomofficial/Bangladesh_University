@@ -2,36 +2,39 @@
 session_start();
 require_once __DIR__ . "/../app/config/db.php";
 
-header('Content-Type: application/json');
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $offering_id = $_POST['offering_id'];
-    $room_id = $_POST['room_id'];
+    $room_id     = $_POST['room_id'];
     $timeslot_id = $_POST['timeslot_id'];
+    $offering_id = $_POST['offering_id'];
 
     try {
-        // Conflict: room + timeslot already used
-        $stmt = $DB_con->prepare("SELECT COUNT(*) FROM schedule WHERE room_id=? AND timeslot_id=?");
-        $stmt->execute([$room_id, $timeslot_id]);
-        if ($stmt->fetchColumn() > 0) {
-            echo json_encode(['success' => false, 'message' => 'This room is already booked for that timeslot.']);
+        // Conflict check: room already booked?
+        $stmt = $DB_con->prepare("SELECT id FROM schedule WHERE room_id=:r AND timeslot_id=:t");
+        $stmt->execute([':r' => $room_id, ':t' => $timeslot_id]);
+        if ($stmt->rowCount() > 0) {
+            echo json_encode(['success' => false, 'message' => '⚠ Room already assigned at this time.']);
             exit;
         }
 
-        // Conflict: same offering in same timeslot
-        $stmt = $DB_con->prepare("SELECT COUNT(*) FROM schedule WHERE offering_id=? AND timeslot_id=?");
-        $stmt->execute([$offering_id, $timeslot_id]);
-        if ($stmt->fetchColumn() > 0) {
-            echo json_encode(['success' => false, 'message' => 'This course is already scheduled in this timeslot.']);
+        // Conflict check: faculty double-booked?
+        $stmt = $DB_con->prepare("
+            SELECT sc.id FROM schedule sc
+            JOIN course_offerings o ON sc.offering_id = o.id
+            WHERE o.faculty_id=(SELECT faculty_id FROM course_offerings WHERE id=:oid)
+            AND sc.timeslot_id=:t
+        ");
+        $stmt->execute([':oid' => $offering_id, ':t' => $timeslot_id]);
+        if ($stmt->rowCount() > 0) {
+            echo json_encode(['success' => false, 'message' => '⚠ Faculty already has a class this timeslot.']);
             exit;
         }
 
-        // Insert new schedule
-        $stmt = $DB_con->prepare("INSERT INTO schedule (offering_id, room_id, timeslot_id, created_at) VALUES (?,?,?,NOW())");
-        $stmt->execute([$offering_id, $room_id, $timeslot_id]);
+        // Insert
+        $stmt = $DB_con->prepare("INSERT INTO schedule (offering_id, room_id, timeslot_id, created_at) VALUES (:o,:r,:t,NOW())");
+        $stmt->execute([':o' => $offering_id, ':r' => $room_id, ':t' => $timeslot_id]);
 
-        echo json_encode(['success' => true]);
+        echo json_encode(['success' => true, 'message' => '✅ Schedule saved!']);
     } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => 'DB Error: ' . $e->getMessage()]);
     }
 }

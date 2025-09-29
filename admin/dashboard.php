@@ -184,6 +184,32 @@ include 'admin_header.php';
       </div>
     </div>
 
+    <?php
+    // ===== Revenue Queries =====
+    // Admission Revenue
+    $admRev = $DB_con->query("SELECT IFNULL(SUM(amount),0) FROM admission_invoices WHERE status='paid'")->fetchColumn();
+
+    // Semester Fee Revenue
+    $semRev = $DB_con->query("SELECT IFNULL(SUM(amount),0) FROM payments WHERE status='paid'")->fetchColumn();
+
+    // Total Revenue
+    $totalRev = $admRev + $semRev;
+    ?>
+
+    <!-- Revenue Summary -->
+    <div class="col-sm-6 col-md-4 col-lg-4">
+      <div class="card text-white bg-success h-100">
+        <div class="card-body">
+          <h6 class="card-title">💰 Total Revenue</h6>
+          <p class="display-6 mb-0"><?= number_format($totalRev, 2); ?> ৳</p>
+        </div>
+        <div class="card-footer bg-transparent border-0 small">
+          Admission: <?= number_format($admRev, 2); ?> ৳ <br>
+          Semester Fees: <?= number_format($semRev, 2); ?> ৳
+        </div>
+      </div>
+    </div>
+
 
   </div>
 </div>

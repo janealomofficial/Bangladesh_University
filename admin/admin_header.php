@@ -119,6 +119,9 @@
       <a class="nav-link" href="manage_offerings.php">
         <i class="bi bi-link"></i> Manage Offerings
       </a>
+      <a href="revenue_report.php" class="nav-link text-white">
+        <i class="bi bi-currency-dollar"></i> Revenue Report
+      </a>
     </div>
 
     <!-- Profile always pinned at bottom -->
