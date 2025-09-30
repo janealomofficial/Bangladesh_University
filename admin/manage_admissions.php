@@ -1,61 +1,37 @@
-<?php
+<?php 
 session_start();
 require_once __DIR__ . "/../app/config/db.php";
+
+// Check admin role
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../login.php");
     exit;
 }
 
-// Handle actions: mark paid, delete
-if (isset($_GET['action']) && isset($_GET['id'])) {
-    $action = $_GET['action'];
-    $id = (int)$_GET['id'];
-
-    if ($action === 'mark_paid') {
-        // create payment reference and optionally create invoice
-        $payment_reference = 'ADMINPAY' . strtoupper(bin2hex(random_bytes(4)));
-        $DB_con->prepare("UPDATE admissions SET payment_status='paid', payment_reference=:pref WHERE id=:id")
-            ->execute([':pref' => $payment_reference, ':id' => $id]);
-
-        // create invoice if not exists
-        $chk = $DB_con->prepare("SELECT id FROM admission_invoices WHERE admission_id=:aid LIMIT 1");
-        $chk->execute([':aid' => $id]);
-        if (!$chk->fetch()) {
-            // create invoice (amount default 5000)
-            $amount = 5000.00;
-            $datepart = date('Ymd');
-            $seq_stmt = $DB_con->prepare("SELECT COUNT(*) FROM admission_invoices WHERE DATE(issued_at)=CURDATE()");
-            $seq_stmt->execute();
-            $seq = (int)$seq_stmt->fetchColumn() + 1;
-            $invoice_no = 'INV' . $datepart . '-' . str_pad($seq, 4, '0', STR_PAD_LEFT);
-            $ins = $DB_con->prepare("INSERT INTO admission_invoices (admission_id, invoice_no, amount, status) VALUES (:aid, :inv, :amt, 'paid')");
-            $ins->execute([':aid' => $id, ':inv' => $invoice_no, ':amt' => $amount]);
-        }
-    }
-
-    if ($action === 'delete') {
-        $DB_con->prepare("DELETE FROM admissions WHERE id=:id")->execute([':id' => $id]);
-    }
-
-    header("Location: manage_admissions.php");
-    exit;
-}
-
-// fetch admissions with invoice if any
-$rows = $DB_con->query("
-    SELECT a.*, ai.invoice_no, ai.id AS invoice_id
+// Fetch admissions with the latest invoice info
+$sql = "
+    SELECT a.id, a.student_id, a.full_name, a.email, a.phone, a.department, 
+           a.program, a.batch, a.payment_status, a.payment_reference,
+           ai.invoice_no, ai.id AS invoice_id
     FROM admissions a
-    LEFT JOIN admission_invoices ai ON ai.admission_id = a.id
-    ORDER BY a.created_at DESC
-")->fetchAll(PDO::FETCH_ASSOC);
+    LEFT JOIN admission_invoices ai 
+        ON ai.admission_id = a.id 
+       AND ai.id = (
+            SELECT MAX(id) 
+            FROM admission_invoices 
+            WHERE admission_id = a.id
+       )
+    ORDER BY a.id DESC
+";
+$stmt = $DB_con->query($sql);
+$admissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+include 'admin_header.php';
 ?>
-<?php include 'admin_header.php'; ?>
 
-<div class="container-fluid p-4">
+<div class="container-fluid mt-4">
     <h2>Manage Admissions</h2>
-
-    <table class="table table-striped table-bordered mt-3">
+    <table class="table table-bordered table-striped">
         <thead class="table-dark">
             <tr>
                 <th>ID</th>
@@ -72,39 +48,52 @@ $rows = $DB_con->query("
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($rows as $r): ?>
+        <?php if ($admissions): ?>
+            <?php foreach ($admissions as $row): ?>
                 <tr>
-                    <td><?= $r['id'] ?></td>
-                    <td><?= htmlspecialchars($r['student_id']) ?></td>
-                    <td><?= htmlspecialchars($r['full_name']) ?></td>
-                    <td><?= htmlspecialchars($r['email']) ?></td>
-                    <td><?= htmlspecialchars($r['phone']) ?></td>
-                    <td><?= htmlspecialchars($r['department']) ?></td>
-                    <td><?= htmlspecialchars($r['program']) ?></td>
-                    <td><?= htmlspecialchars($r['batch']) ?></td>
+                    <td><?= htmlspecialchars($row['id']) ?></td>
+                    <td><?= htmlspecialchars($row['student_id']) ?></td>
+                    <td><?= htmlspecialchars($row['full_name']) ?></td>
+                    <td><?= htmlspecialchars($row['email']) ?></td>
+                    <td><?= htmlspecialchars($row['phone']) ?></td>
+                    <td><?= htmlspecialchars($row['department']) ?></td>
+                    <td><?= htmlspecialchars($row['program']) ?></td>
+                    <td><?= htmlspecialchars($row['batch']) ?></td>
                     <td>
-                        <?php if ($r['payment_status'] === 'paid'): ?>
+                        <?php if ($row['payment_status'] === 'paid'): ?>
                             <span class="badge bg-success">Paid</span><br>
-                            <small><?= htmlspecialchars($r['payment_reference']) ?></small>
+                            <small><?= htmlspecialchars($row['payment_reference']) ?></small>
                         <?php else: ?>
-                            <span class="badge bg-warning">Pending</span>
+                            <span class="badge bg-warning text-dark">Pending</span>
                         <?php endif; ?>
                     </td>
-                    <td>
-                        <?php if (!empty($r['invoice_id'])): ?>
-                            <a href="../invoice.php?invoice_id=<?= $r['invoice_id'] ?>" target="_blank"><?= htmlspecialchars($r['invoice_no']) ?></a>
-                        <?php else: ?>
-                            -
-                        <?php endif; ?>
+                        <td>
+                    <?php if (!empty($row['invoice_no'])): ?>
+                        <a href="invoice.php?invoice_id=<?= (int)$row['invoice_id'] ?>" target="_blank">
+                            <?= htmlspecialchars($row['invoice_no']) ?>
+                        </a>
+                    <?php elseif ($row['payment_status'] === 'paid'): ?>
+                        <!-- with helper/backfill, this will be rare -->
+                        <span class="text-muted">Generating… refresh</span>
+                    <?php else: ?>
+                        <span class="text-muted">Payment Pending</span>
+                    <?php endif; ?>
                     </td>
+
                     <td>
-                        <?php if ($r['payment_status'] !== 'paid'): ?>
-                            <a href="manage_admissions.php?action=mark_paid&id=<?= $r['id'] ?>" class="btn btn-sm btn-success" onclick="return confirm('Mark as paid?')">Mark paid</a>
-                        <?php endif; ?>
-                        <a href="manage_admissions.php?action=delete&id=<?= $r['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this applicant?')">Delete</a>
+                        <a href="delete_admission.php?id=<?= $row['id'] ?>" 
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Are you sure you want to delete this admission?');">
+                           Delete
+                        </a>
                     </td>
                 </tr>
             <?php endforeach; ?>
+        <?php else: ?>
+            <tr>
+                <td colspan="11" class="text-center">No admissions found</td>
+            </tr>
+        <?php endif; ?>
         </tbody>
     </table>
 </div>

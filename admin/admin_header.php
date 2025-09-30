@@ -122,6 +122,9 @@
       <a href="revenue_report.php" class="nav-link text-white">
         <i class="bi bi-currency-dollar"></i> Revenue Report
       </a>
+        <a href="manage_results.php" class="nav-link text-white">
+          <i class="bi bi-clipboard-check"></i> Manage Results
+        </a>
     </div>
 
     <!-- Profile always pinned at bottom -->

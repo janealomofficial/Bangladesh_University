@@ -24,8 +24,9 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'faculty') {
                 <li class="nav-item"><a href="dashboard.php" class="nav-link text-white"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
                 <li class="nav-item"><a href="faculty_routine.php" class="nav-link text-white"><i class="bi bi-calendar3"></i> My Routine</a></li>
                 <li class="nav-item"><a href="faculty_courses.php" class="nav-link text-white"><i class="bi bi-journal-bookmark"></i> My Courses</a></li>
+                <a href="manage_results.php" class="nav-link text-white"> <i class="bi bi-clipboard-check"></i> Manage Results</a>
                 <li class="nav-item"><a href="../logout.php" class="nav-link text-white"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
-                <li class="nav-item"><a href="faculty_routine.php" class="nav-link text-white"><i class="bi bi-calendar3"></i> My Routine</a></li>
+
 
             </ul>
         </div>

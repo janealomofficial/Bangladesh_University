@@ -1,23 +1,33 @@
 <?php
 require_once __DIR__ . "/app/config/db.php";
-$invoice_id = (int)($_GET['invoice_id'] ?? 0);
-if (!$invoice_id) {
-    die("Invoice ID required.");
+
+$admission_id = (int)($_GET['id'] ?? 0);
+if (!$admission_id) {
+    die("Admission ID required.");
 }
 
 $stmt = $DB_con->prepare("
-  SELECT ai.*, a.full_name, a.student_id, a.email, a.phone, a.address, a.program, a.batch, a.department
-  FROM admission_invoices ai
-  JOIN admissions a ON ai.admission_id = a.id
-  WHERE ai.id = :id
+  SELECT a.*
+  FROM admissions a
+  WHERE a.id = :id
   LIMIT 1
 ");
-$stmt->execute([':id' => $invoice_id]);
+$stmt->execute([':id' => $admission_id]);
 $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
 if (!$row) die("Invoice not found.");
 
+// If no invoice_no exists yet, generate one
+if (empty($row['invoice_no'])) {
+    $invoiceNo = "INV" . date("Ymd") . "-" . str_pad($row['id'], 4, "0", STR_PAD_LEFT);
+    $update = $DB_con->prepare("UPDATE admissions SET invoice_no = :inv WHERE id = :id");
+    $update->execute([':inv' => $invoiceNo, ':id' => $row['id']]);
+    $row['invoice_no'] = $invoiceNo;
+}
+
+require_once __DIR__ . "/includes/header.php";
 ?>
-<?php require_once __DIR__ . "/includes/header.php"; ?>
+
 <div class="container my-5">
     <div class="card">
         <div class="card-body">
@@ -30,7 +40,7 @@ if (!$row) die("Invoice not found.");
 
             <div class="row">
                 <div class="col-md-6">
-                    <h5>Student:</h5>
+                    <h5>Applicant:</h5>
                     <p><?= htmlspecialchars($row['full_name']) ?> <br>
                         Student ID: <?= htmlspecialchars($row['student_id']) ?><br>
                         Email: <?= htmlspecialchars($row['email']) ?><br>
@@ -40,13 +50,14 @@ if (!$row) die("Invoice not found.");
                 </div>
                 <div class="col-md-6 text-end">
                     <h5>Issued:</h5>
-                    <p><?= htmlspecialchars($row['issued_at']) ?></p>
-                    <p><strong>Status:</strong> <?= htmlspecialchars($row['status']) ?></p>
+                    <p><?= htmlspecialchars($row['created_at']) ?></p>
+                    <p><strong>Status:</strong> <?= htmlspecialchars($row['payment_status']) ?></p>
                 </div>
             </div>
 
             <hr>
-            <p><strong>Program:</strong> <?= htmlspecialchars($row['program']) ?> | <strong>Batch:</strong> <?= htmlspecialchars($row['batch']) ?></p>
+            <p><strong>Program:</strong> <?= htmlspecialchars($row['program']) ?> | 
+               <strong>Batch:</strong> <?= htmlspecialchars($row['batch']) ?></p>
 
             <table class="table">
                 <thead>
@@ -71,4 +82,5 @@ if (!$row) die("Invoice not found.");
         </div>
     </div>
 </div>
+
 <?php require_once __DIR__ . "/includes/footer.php"; ?>

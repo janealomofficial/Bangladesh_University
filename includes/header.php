@@ -134,7 +134,7 @@ if (isset($_SESSION['role'])) {
     <div class="menu">
       <a href="/university_ms/index.php">Home</a>
       <a href="about.php">About</a>
-      <a href="#">Admissions</a>
+      <a href="admission.php">Admissions</a>
       <a href="departments.php">Departments</a>
       <a href="news_events.php">News & Events</a>
       <a href="#">Library</a>

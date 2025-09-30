@@ -1,4 +1,4 @@
-<?php
+<?php 
 session_start();
 require_once __DIR__ . "/../app/config/db.php";
 
@@ -18,20 +18,19 @@ if (!$student_id) {
     die("⚠️ Student profile not linked. Please contact admin.");
 }
 
-// Fetch enrolled courses (proper join with semester_id)
+// ✅ FIX: join only by course_id, use enrollment.semester for display
 $stmt = $DB_con->prepare("
     SELECT c.course_name, c.course_code, 
            f.full_name AS faculty_name, 
-           sem.name AS semester_name, 
+           e.semester AS semester_name, 
            o.section, o.year
     FROM enrollments e
     JOIN courses c ON e.course_id = c.course_id
-    JOIN semesters sem ON e.semester_id = sem.semester_id
     LEFT JOIN course_offerings o 
-        ON o.course_id = e.course_id AND o.semester_id = e.semester_id
+        ON o.course_id = e.course_id
     LEFT JOIN faculty f ON o.faculty_id = f.faculty_id
     WHERE e.student_id = :sid
-    ORDER BY o.year DESC, sem.start_date DESC
+    ORDER BY e.enrolled_on DESC
 ");
 $stmt->execute([':sid' => $student_id]);
 $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -61,7 +60,7 @@ include 'student_header.php';
                         <td><?= htmlspecialchars($c['faculty_name'] ?? 'TBA'); ?></td>
                         <td><?= htmlspecialchars($c['section'] ?? '-'); ?></td>
                         <td><?= htmlspecialchars($c['semester_name']); ?></td>
-                        <td><?= htmlspecialchars($c['year']); ?></td>
+                        <td><?= htmlspecialchars($c['year'] ?? '-'); ?></td>
                     </tr>
                 <?php endforeach; ?>
             <?php else: ?>

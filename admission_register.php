@@ -1,62 +1,67 @@
 <?php
 require_once __DIR__ . "/app/config/db.php";
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: admission.php");
-    exit;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        // Collect inputs
+        $full_name  = trim($_POST['full_name']);
+        $email      = trim($_POST['email']);
+        $phone      = trim($_POST['phone']);
+        $address    = trim($_POST['address']);
+        $department = trim($_POST['department']);
+        $program    = trim($_POST['program']);
+        $batch      = trim($_POST['batch']);
+        $amount     = (float)($_POST['amount'] ?? 5000);
+
+        // STEP 1: Insert into admissions (id will AUTO_INCREMENT correctly)
+        $stmt = $DB_con->prepare("
+            INSERT INTO admissions 
+                (full_name, email, phone, address, department, program, batch, payment_status, amount, created_at)
+            VALUES 
+                (:full_name, :email, :phone, :address, :department, :program, :batch, 'paid', :amount, NOW())
+        ");
+        $stmt->execute([
+            ':full_name'  => $full_name,
+            ':email'      => $email,
+            ':phone'      => $phone,
+            ':address'    => $address,
+            ':department' => $department,
+            ':program'    => $program,
+            ':batch'      => $batch,
+            ':amount'     => $amount
+        ]);
+
+        // STEP 2: Get the inserted admission ID
+        $admission_id = $DB_con->lastInsertId();
+
+        // STEP 3: Generate Student ID like BU2025-001
+        $year = date("Y");
+        $student_id = "BU{$year}-" . str_pad($admission_id, 3, "0", STR_PAD_LEFT);
+
+        $DB_con->prepare("UPDATE admissions SET student_id = :sid WHERE id = :id")
+               ->execute([':sid' => $student_id, ':id' => $admission_id]);
+
+        // STEP 4: Generate unique Invoice No
+        $invoice_no = "INV" . date("Ymd") . "-" . str_pad($admission_id, 4, "0", STR_PAD_LEFT);
+
+        $stmt = $DB_con->prepare("
+            INSERT INTO admission_invoices (admission_id, invoice_no, amount, status, issued_at)
+            VALUES (:admission_id, :invoice_no, :amount, 'paid', NOW())
+        ");
+        $stmt->execute([
+            ':admission_id' => $admission_id,
+            ':invoice_no'   => $invoice_no,
+            ':amount'       => $amount
+        ]);
+
+        $invoice_id = $DB_con->lastInsertId();
+
+        // STEP 5: Redirect user to the generated invoice
+        header("Location: admin/invoice.php?invoice_id=" . $invoice_id);
+        exit;
+
+    } catch (PDOException $e) {
+        echo "<p style='color:red;'>❌ DB Error: " . htmlspecialchars($e->getMessage()) . "</p>";
+    }
 }
-
-// Collect + simple validation
-$full_name = trim($_POST['full_name'] ?? '');
-$email = trim($_POST['email'] ?? '');
-$phone = trim($_POST['phone'] ?? '');
-$address = trim($_POST['address'] ?? '');
-$department = trim($_POST['department'] ?? '');
-$program = trim($_POST['program'] ?? '');
-$batch = trim($_POST['batch'] ?? '');
-$amount = (float)($_POST['amount'] ?? 0.0);
-
-if (!$full_name || !$email || !$phone || !$address || !$department || !$program || !$batch) {
-    die("Missing required fields. Please go back and fill all required fields.");
-}
-
-// --- Generate auto Student ID ---
-$year = date('Y');
-$prefix = 'BU' . $year . '-';
-
-// find last student id for this year
-$stmt = $DB_con->prepare("SELECT student_id FROM admissions WHERE student_id LIKE :like ORDER BY id DESC LIMIT 1");
-$stmt->execute([':like' => $prefix . '%']);
-$last = $stmt->fetchColumn();
-
-if ($last) {
-    $parts = explode('-', $last);
-    $num = (int) end($parts);
-    $num++;
-} else {
-    $num = 1;
-}
-$student_id = $prefix . str_pad($num, 3, '0', STR_PAD_LEFT);
-
-// Insert admission (payment_status = pending)
-$ins = $DB_con->prepare("
-    INSERT INTO admissions 
-    (full_name, student_id, email, phone, address, program, batch, department, payment_status, created_at) 
-    VALUES (:full_name, :student_id, :email, :phone, :address, :program, :batch, :department, 'pending', NOW())
-");
-$ins->execute([
-    ':full_name' => $full_name,
-    ':student_id' => $student_id,
-    ':email' => $email,
-    ':phone' => $phone,
-    ':address' => $address,
-    ':program' => $program,
-    ':batch' => $batch,
-    ':department' => $department
-]);
-
-$admission_id = $DB_con->lastInsertId();
-
-// Redirect to payment page (we will simulate payment)
-header("Location: payment.php?admission_id={$admission_id}&amount=" . urlencode(number_format($amount, 2, '.', '')));
-exit;
+?>
